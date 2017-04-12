@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">BiliBili</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+
+    <array name="home_tabs">
+        <item>直播</item>
+        <item>推荐</item>
+        <item>追番</item>
+        <item>分区</item>
+        <item>动态</item>
+        <item>发现</item>
+    </array>
+
+</resources>
