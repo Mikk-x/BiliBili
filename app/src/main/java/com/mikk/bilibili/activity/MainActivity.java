@@ -1,6 +1,7 @@
 package com.mikk.bilibili.activity;
 
 
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
@@ -17,6 +18,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.mikk.bilibili.R;
@@ -38,21 +41,22 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
 
     private Toolbar mToolbar;
-
+    // 刷新
     private SwipeRefreshLayout mSwipeRefreshLayout;
 
     private TabLayout mTabLayout;
 
     private ViewPager mViewPager;
-
+    // 整体抽屉布局
     private DrawerLayout mDrawerLayout;
+    // 抽屉导航布局
     private NavigationView mNavigationView;
-
-    private ActionBarDrawerToggle mToggle;
 
     private ArrayList<BaseFragment> mBaseFragment;
 
     private String[] mTabsArray;
+
+    private ActionBarDrawerToggle mToggle;
 
 
     @Override
@@ -60,10 +64,36 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            Window window = getWindow();
+            // Translucent status bar
+            window.setFlags(
+                    WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
+                    WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+
+            // Translucent navigation bar
+            window.setFlags(
+                    WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION,
+                    WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+        }
+
+        initView();
         initToolBar();
         initDrawerLayout();
         initFragment();
 
+    }
+
+    private void initView() {
+        mViewPager = (ViewPager) findViewById(R.id.viewpager);
+
+        mTabLayout = (TabLayout) findViewById(R.id.tablayout);
+
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+
+        mNavigationView = (NavigationView) findViewById(nav_view);
     }
 
     private void initFragment() {
@@ -80,48 +110,47 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mBaseFragment.add(new DongTaiFragment());
         mBaseFragment.add(new FaXianFragment());
 
-        mViewPager = (ViewPager) findViewById(R.id.viewpager);
 
-        mTabLayout = (TabLayout) findViewById(R.id.tablayout);
         //tab和viewpager绑定
         //给viewpager设置适配器
         mViewPager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager()));
         mTabLayout.setupWithViewPager(mViewPager);
 
         //因为viewpager初始化是不会走onPageSelected事件，要手动让它加载一次
+        // 默认显示推荐Fragment
         mViewPager.setCurrentItem(1);
-        mViewPager.setCurrentItem(0);
 
     }
 
 
     private void initToolBar() {
-        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+
         // 将toolbar实例传入，外观和功能和ActionBar一致
         setSupportActionBar(mToolbar);
     }
 
     private void initDrawerLayout() {
 
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+
         // 得到ActionBar的实例
         mToggle = new ActionBarDrawerToggle(this, mDrawerLayout, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         mDrawerLayout.setDrawerListener(mToggle);
         // 同步状态
         mToggle.syncState();
-
+        // 设置打开抽屉布局图标
         mToolbar.setNavigationIcon(R.drawable.ic_menu_black_24dp);
 
-        mNavigationView = (NavigationView) findViewById(nav_view);
 
+        // 抽屉布局默认显示首页
         mNavigationView.setCheckedItem(R.id.nav_shouye);
+        // 抽屉布局点击事件
         mNavigationView.setNavigationItemSelectedListener(this);
 
     }
 
 
     /**
-     * 加载toolbar.xml这个菜单文件
+     * 加载toolbar.xml这个菜单文件,toolbar图标
      * @param menu
      * @return
      */
@@ -205,7 +234,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
             default:
         }
-
+        // 关闭侧滑菜单
         mDrawerLayout.closeDrawer(GravityCompat.START);
         return true;
     }
