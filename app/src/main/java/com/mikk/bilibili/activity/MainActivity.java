@@ -1,268 +1,300 @@
 package com.mikk.bilibili.activity;
 
 
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
-import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.Menu;
+import android.support.v7.app.AppCompatDelegate;
 import android.view.MenuItem;
-import android.view.Window;
-import android.view.WindowManager;
-import android.widget.Toast;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.mikk.bilibili.R;
-import com.mikk.bilibili.base.BaseFragment;
+import com.mikk.bilibili.base.RxBaseActivity;
 import com.mikk.bilibili.fragment.DongTaiFragment;
 import com.mikk.bilibili.fragment.FaXianFragment;
 import com.mikk.bilibili.fragment.FenQuFragment;
 import com.mikk.bilibili.fragment.TuiJianFragment;
 import com.mikk.bilibili.fragment.ZhiBoFragment;
 import com.mikk.bilibili.fragment.ZhuiFanFragment;
-import com.mikk.bilibili.utils.UIUtils;
+import com.mikk.bilibili.utils.ConstantUtil;
+import com.mikk.bilibili.utils.PreferenceUtil;
+import com.mikk.bilibili.utils.ToastUtil;
 
-import java.util.ArrayList;
-
-import static com.mikk.bilibili.R.id.nav_view;
-
-
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+import butterknife.BindView;
+import de.hdodenhof.circleimageview.CircleImageView;
 
 
-    private Toolbar mToolbar;
-    // 刷新
-    private SwipeRefreshLayout mSwipeRefreshLayout;
+public class MainActivity extends RxBaseActivity
+        implements NavigationView.OnNavigationItemSelectedListener {
 
-    private TabLayout mTabLayout;
+    @BindView(R.id.drawer_layout)
+    DrawerLayout mDrawerLayout;
 
-    private ViewPager mViewPager;
-    // 整体抽屉布局
-    private DrawerLayout mDrawerLayout;
-    // 抽屉导航布局
-    private NavigationView mNavigationView;
+    @BindView(R.id.navigation_view)
+    NavigationView mNavigationView;
 
-    private ArrayList<BaseFragment> mBaseFragment;
+    private Fragment[] fragments;
 
-    private String[] mTabsArray;
+    private int currentTabIndex;
 
-    private ActionBarDrawerToggle mToggle;
+    private int index;
+
+    private long exitTime;
+
+    private DongTaiFragment mDongTaiFragment;
 
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+    public int getLayoutId() {
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            Window window = getWindow();
-            // Translucent status bar
-            window.setFlags(
-                    WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
-                    WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-
-            // Translucent navigation bar
-            window.setFlags(
-                    WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION,
-                    WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-        }
-
-        initView();
-        initToolBar();
-        initDrawerLayout();
-        initFragment();
-
-    }
-
-    private void initView() {
-        mViewPager = (ViewPager) findViewById(R.id.viewpager);
-
-        mTabLayout = (TabLayout) findViewById(R.id.tablayout);
-
-        mToolbar = (Toolbar) findViewById(R.id.toolbar);
-
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-
-        mNavigationView = (NavigationView) findViewById(nav_view);
-    }
-
-    private void initFragment() {
-
-        //获得tabs的标题
-        mTabsArray = UIUtils.getStringArray(R.array.home_tabs);
-
-        //添加fragment
-        mBaseFragment = new ArrayList<>();
-        mBaseFragment.add(new ZhiBoFragment());
-        mBaseFragment.add(new TuiJianFragment());
-        mBaseFragment.add(new ZhuiFanFragment());
-        mBaseFragment.add(new FenQuFragment());
-        mBaseFragment.add(new DongTaiFragment());
-        mBaseFragment.add(new FaXianFragment());
-
-
-        //tab和viewpager绑定
-        //给viewpager设置适配器
-        mViewPager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager()));
-        mTabLayout.setupWithViewPager(mViewPager);
-
-        //因为viewpager初始化是不会走onPageSelected事件，要手动让它加载一次
-        // 默认显示推荐Fragment
-        mViewPager.setCurrentItem(1);
-
+        return R.layout.activity_main;
     }
 
 
-    private void initToolBar() {
+    @Override
+    public void initViews(Bundle savedInstanceState) {
 
-        // 将toolbar实例传入，外观和功能和ActionBar一致
-        setSupportActionBar(mToolbar);
+        //初始化Fragment
+        initFragments();
+        //初始化侧滑菜单
+        initNavigationView();
     }
 
-    private void initDrawerLayout() {
+
+    /**
+     * 初始化Fragments
+     */
+    private void initFragments() {
+
+        mDongTaiFragment = new DongTaiFragment();
+        FaXianFragment mFavoritesFragment = new FaXianFragment();
+        FenQuFragment mHistoryFragment = new FenQuFragment();
+        TuiJianFragment mAttentionPeopleFragment = new TuiJianFragment();
+        ZhiBoFragment mConsumeHistoryFragment = new ZhiBoFragment();
+        ZhuiFanFragment mSettingFragment = new ZhuiFanFragment();
+
+        fragments = new Fragment[] {
+                mDongTaiFragment,
+                mFavoritesFragment,
+                mHistoryFragment,
+                mAttentionPeopleFragment,
+                mConsumeHistoryFragment,
+                mSettingFragment
+        };
+
+        // 添加显示第一个fragment
+        getSupportFragmentManager()
+                .beginTransaction()
+                .add(R.id.container, mDongTaiFragment)
+                .show(mDongTaiFragment).commit();
+    }
 
 
-        // 得到ActionBar的实例
-        mToggle = new ActionBarDrawerToggle(this, mDrawerLayout, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        mDrawerLayout.setDrawerListener(mToggle);
-        // 同步状态
-        mToggle.syncState();
-        // 设置打开抽屉布局图标
-        mToolbar.setNavigationIcon(R.drawable.ic_menu_black_24dp);
+    /**
+     * 初始化NavigationView
+     */
+    private void initNavigationView() {
 
-
-        // 抽屉布局默认显示首页
-        mNavigationView.setCheckedItem(R.id.nav_shouye);
-        // 抽屉布局点击事件
         mNavigationView.setNavigationItemSelectedListener(this);
+        View headerView = mNavigationView.getHeaderView(0);
+        CircleImageView mUserAvatarView = (CircleImageView) headerView.findViewById(
+                R.id.user_avatar_view);
+        TextView mUserName = (TextView) headerView.findViewById(R.id.user_name);
+        TextView mUserSign = (TextView) headerView.findViewById(R.id.user_other_info);
+        ImageView mSwitchMode = (ImageView) headerView.findViewById(R.id.iv_head_switch_mode);
+        //设置头像
+//        mUserAvatarView.setImageResource(R.drawable.ic_hotbitmapgg_avatar);
+        //设置用户名 签名
+        mUserName.setText(getResources().getText(R.string.hotbitmapgg));
+        mUserSign.setText(getResources().getText(R.string.about_user_head_layout));
+        //设置日夜间模式切换
+        mSwitchMode.setOnClickListener(v -> switchNightMode());
 
-    }
-
-
-    /**
-     * 加载toolbar.xml这个菜单文件,toolbar图标
-     * @param menu
-     * @return
-     */
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.toolbar, menu);
-        return true;
-    }
-
-    /**
-     * toolbar各个点击事件
-     *
-     * @param item
-     * @return
-     */
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            // HomeAsUp按钮的id永远都是 android.R.id.home
-            case android.R.id.home:
-                Toast.makeText(this, "HomeAsUp", Toast.LENGTH_SHORT).show();
-                // openDrawer展示滑动菜单  参数：为了保证这里的行为和xml中定义的一致
-                mDrawerLayout.openDrawer(GravityCompat.START);
-                break;
-            case R.id.action_game:
-                Toast.makeText(this, "游戏", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.action_download:
-                Toast.makeText(this, "下载", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.action_search:
-                Toast.makeText(this, "查询", Toast.LENGTH_SHORT).show();
-                break;
-            default:
+        boolean flag = PreferenceUtil.getBoolean(ConstantUtil.SWITCH_MODE_KEY, false);
+        if (flag) {
+            mSwitchMode.setImageResource(R.drawable.ic_switch_daily);
+        } else {
+            mSwitchMode.setImageResource(R.drawable.ic_switch_night);
         }
-        return true;
     }
 
+
     /**
-     * 侧滑菜单点击事件
-     * @param item
-     * @return
+     * 日夜间模式切换
      */
+    private void switchNightMode() {
+
+        boolean isNight = PreferenceUtil.getBoolean(ConstantUtil.SWITCH_MODE_KEY, false);
+        if (isNight) {
+            // 日间模式
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+            PreferenceUtil.putBoolean(ConstantUtil.SWITCH_MODE_KEY, false);
+        } else {
+            // 夜间模式
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+            PreferenceUtil.putBoolean(ConstantUtil.SWITCH_MODE_KEY, true);
+        }
+
+        recreate();
+    }
+
+
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
 
-        switch (item.getItemId()) {
-            case R.id.nav_shouye:
-                Toast.makeText(this, "首页", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.nav_huiyuan:
-                Toast.makeText(this, "我的大会员", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.nav_jifen:
-                Toast.makeText(this, "会员积分", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.nav_huancun:
-                Toast.makeText(this, "离线缓存", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.nav_shaohou:
-                Toast.makeText(this, "稍后再看", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.nav_shoucang:
-                Toast.makeText(this, "我的收藏", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.nav_lishi:
-                Toast.makeText(this, "历史记录", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.nav_guanzhu:
-                Toast.makeText(this, "我的关注", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.nav_qianbao:
-                Toast.makeText(this, "B币钱包", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.nav_zhuti:
-                Toast.makeText(this, "主题选择", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.nav_shezhi:
-                Toast.makeText(this, "设置与帮助", Toast.LENGTH_SHORT).show();
-                break;
-
-            default:
-        }
-        // 关闭侧滑菜单
         mDrawerLayout.closeDrawer(GravityCompat.START);
-        return true;
+        switch (item.getItemId()) {
+            case R.id.item_home:
+                // 主页
+                changeFragmentIndex(item, 0);
+                return true;
+
+            case R.id.item_download:
+                // 离线缓存
+//                startActivity(new Intent(MainActivity.this, OffLineDownloadActivity.class));
+                return true;
+
+            case R.id.item_vip:
+                //大会员
+//                startActivity(new Intent(MainActivity.this, VipActivity.class));
+                return true;
+
+            case R.id.item_favourite:
+                // 我的收藏
+                changeFragmentIndex(item, 1);
+                return true;
+
+            case R.id.item_history:
+                // 历史记录
+                changeFragmentIndex(item, 2);
+                return true;
+
+            case R.id.item_group:
+                // 关注的人
+                changeFragmentIndex(item, 3);
+                return true;
+
+            case R.id.item_tracker:
+                // 我的钱包
+                changeFragmentIndex(item, 4);
+                return true;
+
+            case R.id.item_theme:
+                // 主题选择
+                // CardPickerDialog dialog = new CardPickerDialog();
+                // dialog.setClickListener(this);
+                // dialog.show(getSupportFragmentManager(), CardPickerDialog.TAG);
+                return true;
+
+            case R.id.item_app:
+                // 应用推荐
+
+                return true;
+
+            case R.id.item_settings:
+                // 设置中心
+                changeFragmentIndex(item, 5);
+                return true;
+        }
+
+        return false;
     }
 
 
     /**
-     * viewpager的适配器
+     * Fragment切换
      */
-    class ViewPagerAdapter extends FragmentPagerAdapter {
+    private void switchFragment() {
 
-        public ViewPagerAdapter(FragmentManager fm) {
-            super(fm);
+        FragmentTransaction trx = getSupportFragmentManager().beginTransaction();
+        trx.hide(fragments[currentTabIndex]);
+        if (!fragments[index].isAdded()) {
+            trx.add(R.id.container, fragments[index]);
         }
+        trx.show(fragments[index]).commit();
+        currentTabIndex = index;
+    }
 
-        @Override
-        public Fragment getItem(int position) {
-            return mBaseFragment.get(position);
-        }
 
-        @Override
-        public int getCount() {
-            return mBaseFragment.size();
-        }
+    /**
+     * 切换Fragment的下标
+     */
+    private void changeFragmentIndex(MenuItem item, int currentIndex) {
 
-        @Override
-        public CharSequence getPageTitle(int position) {
-            return mTabsArray[position];
+        index = currentIndex;
+        switchFragment();
+        item.setChecked(true);
+    }
+
+
+    /**
+     * DrawerLayout侧滑菜单开关
+     */
+    public void toggleDrawer() {
+
+        if (mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
+            mDrawerLayout.closeDrawer(GravityCompat.START);
+        } else {
+            mDrawerLayout.openDrawer(GravityCompat.START);
         }
     }
 
+
+    /**
+     * 监听back键处理DrawerLayout和SearchView
+     */
+//    @Override
+//    public boolean onKeyDown(int keyCode, KeyEvent event) {
+//
+//        if (keyCode == KeyEvent.KEYCODE_BACK) {
+//            if (mDrawerLayout.isDrawerOpen(mDrawerLayout.getChildAt(1))) {
+//                mDrawerLayout.closeDrawers();
+//            } else {
+//                if (mDongTaiFragment != null) {
+//                    if (mDongTaiFragment.isOpenSearchView()) {
+//                        mDongTaiFragment.closeSearchView();
+//                    } else {
+//                        exitApp();
+//                    }
+//                } else {
+//                    exitApp();
+//                }
+//            }
+//        }
+//
+//        return true;
+//    }
+
+
+    /**
+     * 双击退出App
+     */
+    private void exitApp() {
+
+        if (System.currentTimeMillis() - exitTime > 2000) {
+            ToastUtil.ShortToast("再按一次退出");
+            exitTime = System.currentTimeMillis();
+        } else {
+            PreferenceUtil.remove(ConstantUtil.SWITCH_MODE_KEY);
+            finish();
+        }
+    }
+
+
+    /**
+     * 解决App重启后导致Fragment重叠的问题
+     */
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        //super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public void initToolBar() {}
 }

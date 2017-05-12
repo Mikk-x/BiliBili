@@ -3,7 +3,7 @@ package com.mikk.bilibili.utils;
 import android.content.Context;
 import android.content.res.Resources;
 
-import com.mikk.bilibili.common.MyApplication;
+import com.mikk.bilibili.MyApplication;
 
 /**
  * Created by Mikk on 2017/4/12.
@@ -12,7 +12,7 @@ import com.mikk.bilibili.common.MyApplication;
 public class UIUtils {
 
     public static Context getContext() {
-        return MyApplication.getContext();
+        return MyApplication.getInstance();
     }
 
     public static Resources getResources() {
