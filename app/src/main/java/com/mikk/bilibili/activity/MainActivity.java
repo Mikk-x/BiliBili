@@ -9,6 +9,7 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatDelegate;
+import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
@@ -16,12 +17,8 @@ import android.widget.TextView;
 
 import com.mikk.bilibili.R;
 import com.mikk.bilibili.base.RxBaseActivity;
-import com.mikk.bilibili.fragment.DongTaiFragment;
-import com.mikk.bilibili.fragment.FaXianFragment;
-import com.mikk.bilibili.fragment.FenQuFragment;
-import com.mikk.bilibili.fragment.TuiJianFragment;
-import com.mikk.bilibili.fragment.ZhiBoFragment;
-import com.mikk.bilibili.fragment.ZhuiFanFragment;
+import com.mikk.bilibili.module.entry.IFavoritesFragment;
+import com.mikk.bilibili.module.home.HomePageFragment;
 import com.mikk.bilibili.utils.ConstantUtil;
 import com.mikk.bilibili.utils.PreferenceUtil;
 import com.mikk.bilibili.utils.ToastUtil;
@@ -47,7 +44,7 @@ public class MainActivity extends RxBaseActivity
 
     private long exitTime;
 
-    private DongTaiFragment mDongTaiFragment;
+    private HomePageFragment mHomePageFragment;
 
 
     @Override
@@ -72,27 +69,27 @@ public class MainActivity extends RxBaseActivity
      */
     private void initFragments() {
 
-        mDongTaiFragment = new DongTaiFragment();
-        FaXianFragment mFavoritesFragment = new FaXianFragment();
-        FenQuFragment mHistoryFragment = new FenQuFragment();
-        TuiJianFragment mAttentionPeopleFragment = new TuiJianFragment();
-        ZhiBoFragment mConsumeHistoryFragment = new ZhiBoFragment();
-        ZhuiFanFragment mSettingFragment = new ZhuiFanFragment();
+        mHomePageFragment = HomePageFragment.newInstance();
+        IFavoritesFragment mFavoritesFragment = IFavoritesFragment.newInstance();
+//        HistoryFragment mHistoryFragment = HistoryFragment.newInstance();
+//        AttentionPeopleFragment mAttentionPeopleFragment = AttentionPeopleFragment.newInstance();
+//        ConsumeHistoryFragment mConsumeHistoryFragment = ConsumeHistoryFragment.newInstance();
+//        SettingFragment mSettingFragment = SettingFragment.newInstance();
 
         fragments = new Fragment[] {
-                mDongTaiFragment,
+                mHomePageFragment,
                 mFavoritesFragment,
-                mHistoryFragment,
-                mAttentionPeopleFragment,
-                mConsumeHistoryFragment,
-                mSettingFragment
+//                mHistoryFragment,
+//                mAttentionPeopleFragment,
+//                mConsumeHistoryFragment,
+//                mSettingFragment
         };
 
         // 添加显示第一个fragment
         getSupportFragmentManager()
                 .beginTransaction()
-                .add(R.id.container, mDongTaiFragment)
-                .show(mDongTaiFragment).commit();
+                .add(R.id.container, mHomePageFragment)
+                .show(mHomePageFragment).commit();
     }
 
 
@@ -109,7 +106,7 @@ public class MainActivity extends RxBaseActivity
         TextView mUserSign = (TextView) headerView.findViewById(R.id.user_other_info);
         ImageView mSwitchMode = (ImageView) headerView.findViewById(R.id.iv_head_switch_mode);
         //设置头像
-//        mUserAvatarView.setImageResource(R.drawable.ic_hotbitmapgg_avatar);
+        mUserAvatarView.setImageResource(R.drawable.ic_hotbitmapgg_avatar);
         //设置用户名 签名
         mUserName.setText(getResources().getText(R.string.hotbitmapgg));
         mUserSign.setText(getResources().getText(R.string.about_user_head_layout));
@@ -249,27 +246,27 @@ public class MainActivity extends RxBaseActivity
     /**
      * 监听back键处理DrawerLayout和SearchView
      */
-//    @Override
-//    public boolean onKeyDown(int keyCode, KeyEvent event) {
-//
-//        if (keyCode == KeyEvent.KEYCODE_BACK) {
-//            if (mDrawerLayout.isDrawerOpen(mDrawerLayout.getChildAt(1))) {
-//                mDrawerLayout.closeDrawers();
-//            } else {
-//                if (mDongTaiFragment != null) {
-//                    if (mDongTaiFragment.isOpenSearchView()) {
-//                        mDongTaiFragment.closeSearchView();
-//                    } else {
-//                        exitApp();
-//                    }
-//                } else {
-//                    exitApp();
-//                }
-//            }
-//        }
-//
-//        return true;
-//    }
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (mDrawerLayout.isDrawerOpen(mDrawerLayout.getChildAt(1))) {
+                mDrawerLayout.closeDrawers();
+            } else {
+                if (mHomePageFragment != null) {
+                    if (mHomePageFragment.isOpenSearchView()) {
+                        mHomePageFragment.closeSearchView();
+                    } else {
+                        exitApp();
+                    }
+                } else {
+                    exitApp();
+                }
+            }
+        }
+
+        return true;
+    }
 
 
     /**
